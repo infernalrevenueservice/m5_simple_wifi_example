@@ -6,8 +6,17 @@
 const char* ssid = "M5StickC-AP";
 const char* password = "12345678";  // Must be at least 8 characters
 
+// Create WebServer object on port 80
 WebServer server(80);
 
+// Function declarations
+void handleRoot();
+void handleHello();
+void handleNotFound();
+void flashScreenAndSayHello();
+void restoreNormalDisplay();
+
+// HTML content for the webpage
 const char* htmlPage = R"(
 <!DOCTYPE html>
 <html>
@@ -32,6 +41,31 @@ const char* htmlPage = R"(
             box-shadow: 0 4px 6px rgba(0,0,0,0.1);
             display: inline-block;
         }
+        .hello-button {
+            background-color: #4CAF50;
+            border: none;
+            color: white;
+            padding: 15px 32px;
+            text-align: center;
+            text-decoration: none;
+            display: inline-block;
+            font-size: 16px;
+            margin: 20px 2px;
+            cursor: pointer;
+            border-radius: 8px;
+            transition: background-color 0.3s;
+        }
+        .hello-button:hover {
+            background-color: #45a049;
+        }
+        .hello-button:active {
+            background-color: #3e8e41;
+        }
+        #status {
+            margin-top: 20px;
+            font-weight: bold;
+            color: #333;
+        }
     </style>
 </head>
 <body>
@@ -39,7 +73,30 @@ const char* htmlPage = R"(
         <h1>Hello World!</h1>
         <p>Welcome to M5StickC Plus Web Server</p>
         <p>You are successfully connected to the device!</p>
+        <button class="hello-button" onclick='sayHello()'>Say Hello to M5Stick!</button>
+        <div id="status"></div>
     </div>
+    
+    <script>
+        function sayHello() {
+            var statusEl = document.getElementById('status');
+            statusEl.innerHTML = 'Sending hello to M5Stick...';
+            
+            fetch('/hello')
+                .then(function(response) {
+                    return response.text();
+                })
+                .then(function(data) {
+                    statusEl.innerHTML = data;
+                    setTimeout(function() {
+                        statusEl.innerHTML = '';
+                    }, 3000);
+                })
+                .catch(function(error) {
+                    statusEl.innerHTML = 'Error: ' + error;
+                });
+        }
+    </script>
 </body>
 </html>
 )";
@@ -48,8 +105,64 @@ void handleRoot() {
   server.send(200, "text/html", htmlPage);
 }
 
+void handleHello() {
+  // Flash the screen and display "Hello"
+  flashScreenAndSayHello();
+  server.send(200, "text/plain", "Hello sent to M5StickC Plus!");
+}
+
 void handleNotFound() {
   server.send(404, "text/plain", "404: Not Found");
+}
+
+void flashScreenAndSayHello() {
+  // Store current display state
+  M5.Lcd.fillScreen(BLACK);
+  
+  // Flash sequence with different colors
+  for (int i = 0; i < 3; i++) {
+    M5.Lcd.fillScreen(WHITE);
+    delay(200);
+    M5.Lcd.fillScreen(RED);
+    delay(200);
+    M5.Lcd.fillScreen(GREEN);
+    delay(200);
+    M5.Lcd.fillScreen(BLUE);
+    delay(200);
+  }
+  
+  // Display "HELLO!" message
+  M5.Lcd.fillScreen(BLACK);
+  M5.Lcd.setTextColor(YELLOW);
+  M5.Lcd.setTextSize(3);
+  M5.Lcd.setCursor(20, 40);
+  M5.Lcd.println("HELLO!");
+  
+  delay(2000);  // Show message for 2 seconds
+  
+  // Return to normal display
+  restoreNormalDisplay();
+}
+
+void restoreNormalDisplay() {
+  M5.Lcd.fillScreen(BLACK);
+  M5.Lcd.setTextColor(WHITE);
+  M5.Lcd.setTextSize(1);
+  
+  // Redisplay connection info
+  M5.Lcd.setCursor(0, 10);
+  M5.Lcd.println("WiFi AP Active");
+  M5.Lcd.setCursor(0, 25);
+  M5.Lcd.print("SSID: ");
+  M5.Lcd.println(ssid);
+  M5.Lcd.setCursor(0, 40);
+  M5.Lcd.print("Pass: ");
+  M5.Lcd.println(password);
+  M5.Lcd.setCursor(0, 55);
+  M5.Lcd.print("IP: ");
+  M5.Lcd.println(WiFi.softAPIP());
+  M5.Lcd.setCursor(0, 70);
+  M5.Lcd.println("Server: Ready");
 }
 
 void setup() {
@@ -91,6 +204,7 @@ void setup() {
   
   // Set up web server routes
   server.on("/", handleRoot);
+  server.on("/hello", handleHello);
   server.onNotFound(handleNotFound);
   
   // Start web server
