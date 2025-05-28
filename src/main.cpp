@@ -215,6 +215,12 @@ void handleRedCircle() {
     server.send(200, "text/plain", "Red circle drawn on M5StickC Plus!");
 }
 
+void handleHello() {
+  // Flash the screen and display "Hello"
+  flashScreenAndSayHello();
+  server.send(200, "text/plain", "Hello sent to M5StickC Plus!");
+}
+
 void handleNotFound() {
     server.send(404, "text/plain", "404: Not Found");
 }
@@ -289,6 +295,56 @@ void restoreNormalDisplay() {
     M5.Lcd.println(WiFi.softAPIP());
     M5.Lcd.setCursor(0, 70);
     M5.Lcd.println("Server: Ready");
+}
+
+void flashScreenAndSayHello() {
+  // Store current display state
+  M5.Lcd.fillScreen(BLACK);
+  
+  // Flash sequence with different colors
+  for (int i = 0; i < 3; i++) {
+    M5.Lcd.fillScreen(WHITE);
+    delay(200);
+    M5.Lcd.fillScreen(RED);
+    delay(200);
+    M5.Lcd.fillScreen(GREEN);
+    delay(200);
+    M5.Lcd.fillScreen(BLUE);
+    delay(200);
+  }
+  
+  // Display "HELLO!" message
+  M5.Lcd.fillScreen(BLACK);
+  M5.Lcd.setTextColor(YELLOW);
+  M5.Lcd.setTextSize(3);
+  M5.Lcd.setCursor(20, 40);
+  M5.Lcd.println("HELLO!");
+  
+  delay(2000);  // Show message for 2 seconds
+  
+  // Return to normal display
+  restoreNormalDisplay();
+}
+
+void restoreNormalDisplay() {
+  M5.Lcd.fillScreen(BLACK);
+  M5.Lcd.setTextColor(WHITE);
+  M5.Lcd.setTextSize(1);
+  
+  // Redisplay connection info
+  M5.Lcd.setCursor(0, 10);
+  M5.Lcd.println("WiFi AP Active");
+  M5.Lcd.setCursor(0, 25);
+  M5.Lcd.print("SSID: ");
+  M5.Lcd.println(ssid);
+  M5.Lcd.setCursor(0, 40);
+  M5.Lcd.print("Pass: ");
+  M5.Lcd.println(password);
+  M5.Lcd.setCursor(0, 55);
+  M5.Lcd.print("IP: ");
+  M5.Lcd.println(WiFi.softAPIP());
+  M5.Lcd.setCursor(0, 70);
+  M5.Lcd.println("Server: Ready");
 }
 
 void setup() {
